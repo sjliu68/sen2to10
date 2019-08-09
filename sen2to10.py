@@ -2,7 +2,8 @@
 """
 Created on Fri Aug  9 08:56:01 2019
 
-@author: Administrator
+@author: Shengjie Liu
+@Email: liushengjie0756@gmail.com
 """
 
 import numpy as np
@@ -11,6 +12,7 @@ import glob
 import os
 from scipy.ndimage import zoom
 import argparse
+
 
 def setGeo(geotransform,bgx,bgy,imx=0):
     if imx==0:
@@ -25,6 +27,7 @@ def setGeo(geotransform,bgx,bgy,imx=0):
              reset3,geotransform[4],imy)
     return reset
 
+
 def sen20to10(fn,outdir=None):
     im = gdal.Open(fn,gdal.GA_ReadOnly)
     projection = im.GetProjection()
@@ -36,12 +39,32 @@ def sen20to10(fn,outdir=None):
     
     name = fn[-11:-4]
     if outdir==None:
-        pass
+        name = wdir+'/'+name
     else:
         name = outdir+'/'+name
     print(name)
-    outdata = gdal.GetDriverByName('GTiff').Create(name+'.tif', imy, imx, 1, gdal.GDT_UInt16)
+    outdata = gdal.GetDriverByName('GTiff').Create(name+'.tif',imy,imx,1,gdal.GDT_UInt16)
     outdata.SetGeoTransform(newgeo)
+    outdata.SetProjection(projection)
+    outdata.GetRasterBand(1).WriteArray(im)
+    outdata.FlushCache() ##saves to disk!!
+    outdata = None
+    
+def read_save(fn,outdir=None):
+    im = gdal.Open(fn,gdal.GA_ReadOnly)
+    projection = im.GetProjection()
+    geotransform = im.GetGeoTransform()
+    im = im.ReadAsArray()
+    imx,imy = im.shape
+    
+    name = fn[-11:-4]
+    if outdir==None:
+        name = wdir+'/'+name
+    else:
+        name = outdir+'/'+name
+    print(name)
+    outdata = gdal.GetDriverByName('GTiff').Create(name+'.tif',imy,imx,1,gdal.GDT_UInt16)
+    outdata.SetGeoTransform(geotransform)
     outdata.SetProjection(projection)
     outdata.GetRasterBand(1).WriteArray(im)
     outdata.FlushCache() ##saves to disk!!
@@ -60,19 +83,64 @@ def readjp2single(fp,outdir=None,mode='20'):
             readjp2single(fn,outdir=outdir,mode=mode)
         else:
             if fn[-11:-4] in ls:
-                sen20to10(fn,outdir=outdir)
+                if '10m' in fn[-11:-4]:
+                    read_save(fn,outdir=outdir)
+                elif '20m' in fn[-11:-4]:
+                    sen20to10(fn,outdir=outdir)
     return 0
+
+def sen2cat(wdir,img='*.tif',name='concat',outdir=None):
+    flist = glob.glob(wdir+'/'+img)
+    imz = len(flist)
+    count = 0
+    
+    if outdir==None:
+        outdir = wdir
+    name = outdir+'/'+name
+        
+    os.chdir(outdir)
+    print(flist)
+    for fn in flist:
+#        print(fn)
+        im = gdal.Open(fn,gdal.GA_ReadOnly)
+        projection = im.GetProjection()
+        geotransform = im.GetGeoTransform()
+        im = im.ReadAsArray()
+        imx,imy = im.shape
+
+        count += 1
+        
+        if count==1:
+            outdata = gdal.GetDriverByName('GTiff').Create(name+'.tif',imy,imx,imz,gdal.GDT_UInt16)
+            outdata.SetGeoTransform(geotransform)
+            outdata.SetProjection(projection)
+        outdata.GetRasterBand(count).WriteArray(im)
+        outdata.FlushCache() ##saves to disk!!
+    outdata = None
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='manual to this script')
     parser.add_argument('--wdir', type=str, default=None)
     parser.add_argument('--outdir', type=str, default=None)
+    parser.add_argument('--mode', type=str, default=None)
     args = parser.parse_args()
     wdir = args.wdir
     outdir = args.outdir
-    
+    mode = args.mode
+#    print(mode)
+    if mode in ['all','20']:
+        pass
+    else:
+        mode = '20'
+        
+    if outdir==None:
+        outdir = wdir
+        
     if wdir!=None:
-        readjp2single(wdir,outdir=outdir,mode='20')
+        os.chdir(wdir)
+        readjp2single(wdir,outdir=outdir,mode=mode)
+        sen2cat(outdir)
     else:
         print('No directory specified!!')
     
