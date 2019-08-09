@@ -17,9 +17,6 @@ Feel free to contact me: liushengjie0756 [AT] gmail.com
 - You can import each function individually to your scripts
 
 
-## Updates
-- [x] Merge images to a single tif
-
-
 ## To do
 - [ ] Subset function
+- [ ] Merge images to a single tif
