@@ -14,17 +14,17 @@ from scipy.ndimage import zoom
 import argparse
 
 
-def setGeo(geotransform,bgx,bgy,imx=0):
-    if imx==0:
-        imx = geotransform[1]
-        imy = geotransform[5]
+def setGeo(geotransform,bgx,bgy,x_offset=0):
+    if x_offset==0:
+        x_offset = geotransform[1]
+        y_offset = geotransform[5]
     else:
-        imx = imx
-        imy = -imx
-    reset0 = geotransform[0] + bgx*imx
-    reset3 = geotransform[3] + bgy*imy
-    reset = (reset0,imx,geotransform[2],
-             reset3,geotransform[4],imy)
+        x_offset = x_offset
+        y_offset = -x_offset
+    reset0 = geotransform[0] + bgx*geotransform[1]
+    reset3 = geotransform[3] + bgy*geotransform[5]
+    reset = (reset0,x_offset,geotransform[2],
+             reset3,geotransform[4],y_offset)
     return reset
 
 
@@ -50,6 +50,7 @@ def sen20to10(fn,outdir=None):
     outdata.FlushCache() ##saves to disk!!
     outdata = None
     
+    
 def read_save(fn,outdir=None):
     im = gdal.Open(fn,gdal.GA_ReadOnly)
     projection = im.GetProjection()
@@ -70,6 +71,7 @@ def read_save(fn,outdir=None):
     outdata.FlushCache() ##saves to disk!!
     outdata = None
 
+    
 def readjp2single(fp,outdir=None,mode='20'):
     if mode=='20':
         ls = ['B05_20m','B06_20m','B07_20m','B8A_20m','B11_20m','B12_20m']
@@ -88,6 +90,7 @@ def readjp2single(fp,outdir=None,mode='20'):
                 elif '20m' in fn[-11:-4]:
                     sen20to10(fn,outdir=outdir)
     return 0
+
 
 def sen2cat(wdir,img='*.tif',name='concat',outdir=None):
     flist = glob.glob(wdir+'/'+img)
