@@ -135,7 +135,7 @@ if __name__ == '__main__':
     if mode in ['all','20']:
         pass
     else:
-        mode = '20'
+        mode = 'all'
         
     if outdir==None:
         outdir = wdir
