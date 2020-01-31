@@ -33,7 +33,7 @@ def sen20to10(fn,outdir=None):
     projection = im.GetProjection()
     geotransform = im.GetGeoTransform()
     im = im.ReadAsArray()
-    newgeo = setGeo(geotransform,0,0,imx=10)
+    newgeo = setGeo(geotransform,0,0,x_offset=10)
     im = zoom(im,[2,2],order=0,mode='nearest')
     imx,imy = im.shape
     
